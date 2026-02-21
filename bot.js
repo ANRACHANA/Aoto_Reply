@@ -6,8 +6,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const TOKEN       = process.env.TOKEN;
 const PORT        = process.env.PORT || 3000;
 const FB_PAGE     = process.env.FB_PAGE;
-const ADMIN_LINK  = process.env.ADMIN_LINK; // link for mini Telegram app
-const REPLY_DELAY = Number(process.env.REPLY_DELAY) || 5000; // default 5s
+const ADMIN_LINK  = process.env.ADMIN_LINK; // mini-app link (HTTPS)
+const REPLY_DELAY = Number(process.env.REPLY_DELAY) || 5000; // 5s default
 
 if (!TOKEN) {
   console.error('❌ TOKEN is missing');
@@ -24,18 +24,6 @@ const bot = new TelegramBot(TOKEN, { polling: true });
 
 // Delay helper
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
-
-// ================== BUTTONS ==================
-const BUTTONS = {
-  reply_markup: {
-    inline_keyboard: [
-      [
-        ...(FB_PAGE ? [{ text: '📘 Facebook Page', url: FB_PAGE }] : []),
-        ...(ADMIN_LINK ? [{ text: '👤 Admin', web_app: { url: ADMIN_LINK } }] : [])
-      ]
-    ]
-  }
-};
 
 // ================== ACTIVE CHAT TRACKER ==================
 const activeChats = new Set();
@@ -60,7 +48,16 @@ bot.on('message', async (msg) => {
     // 2️⃣ Wait delay
     await delay(REPLY_DELAY);
 
-    // 3️⃣ Send reply
+    // 3️⃣ Build buttons safely
+    const buttonsArray = [];
+    if (FB_PAGE) buttonsArray.push({ text: '📘 Facebook Page', url: FB_PAGE });
+    if (ADMIN_LINK) buttonsArray.push({ text: '👤 Admin', web_app: { url: ADMIN_LINK } });
+
+    const BUTTONS = {
+      reply_markup: buttonsArray.length ? { inline_keyboard: [buttonsArray] } : undefined
+    };
+
+    // 4️⃣ Send reply
     await bot.sendMessage(
       chatId,
       `សួស្តី! ${username} 👋
